@@ -469,6 +469,74 @@
     "fig.write_image(filename)\n",
     "display(Image(filename))"
    ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Grid search\n",
+    "\n",
+    "With grid search, the defined search space over-rides the trial suggestions in the objective."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def objective(trial):\n",
+    "\n",
+    "    # Set Optuna trial parameters and ranges\n",
+    "    n_estimators = trial.suggest_int('n_estimators', 2, 20)\n",
+    "    max_depth = int(trial.suggest_float('max_depth', 1, 32, log=True))\n",
+    "    \n",
+    "    # Set up model\n",
+    "    clf = sklearn.ensemble.RandomForestClassifier(\n",
+    "        n_estimators=n_estimators, max_depth=max_depth)\n",
+    "    \n",
+    "    # Assess accuracy with sklearn.model_selection.cross_val_score\n",
+    "    accuracy = sklearn.model_selection.cross_val_score(\n",
+    "        clf, X, y, n_jobs=-1, cv=3).mean()\n",
+    "    \n",
+    "    return accuracy\n",
+    "\n",
+    "# Define search space: this will over-ride the suggestions in the objective fnc.\n",
+    "search_space = {\n",
+    "    \"n_estimators\": [2, 5, 10, 15, 20], \n",
+    "    \"max_depth\": [1, 5, 10, 15, 20]}\n",
+    "\n",
+    "# Set up Optuna study\n",
+    "study = optuna.create_study(direction='maximize', \n",
+    "                            sampler=optuna.samplers.GridSampler(search_space))\n",
+    "\n",
+    "# Run optimisation\n",
+    "study.optimize(objective, n_trials=100)\n",
+    "\n",
+    "# Get best model run\n",
+    "trial = study.best_trial\n",
+    "\n",
+    "# Clear optimisation output and display output\n",
+    "clear_output(wait=True)\n",
+    "print(f'Accuracy: {trial.value:0.3f}')\n",
+    "print(f'Best hyperparameters: {trial.params}')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fig = optuna.visualization.plot_contour(study, params=['n_estimators', 'max_depth'])\n",
+    "\n",
+    "# To display fig in an orinary norebook use `fig.show`\n",
+    "\n",
+    "# The following is needed only to display the image in an online Jupyter Book\n",
+    "filename = './images/temp.jpg'\n",
+    "fig.write_image(filename)\n",
+    "display(Image(filename))"
+   ]
   }
  ],
  "metadata": {
